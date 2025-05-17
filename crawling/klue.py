@@ -20,40 +20,41 @@ def login(driver, email, password):
     driver.find_element(By.XPATH, '//*[@id="root"]/div/div/section/div/div/div/div/input[2]').send_keys(password)
     driver.find_element(By.XPATH, '//*[@id="root"]/div/div/section/div/div/div/div/button').click()
 
-options = webdriver.ChromeOptions()
-options.add_argument("start-maximized")
-options.add_argument("--disable-extensions")
-driver = webdriver.Chrome(options=options)
+def safe_get_text(driver,xpath):
+    try:
+        return driver.find_element(By.XPATH, xpath).text
+    except NoSuchElementException:
+        return "N/A"
+
 
 
 def scrape_lecture(driver, lecture_id, worksheet):
     url = f"https://klue.kr/lectures/{lecture_id}"
     driver.get(url)
     time.sleep(1)
-    title = driver.find_element(By.XPATH, '//*[@id="root"]/div/div/section/section[1]/div/div[1]/div[1]/div[2]/p[1]').text
-    semester = driver.find_element(By.XPATH, '//*[@id="root"]/div/div/section/section[1]/div/div[1]/div[1]/div[1]/p[1]').text
-    # 없는 값 Null 들어가도록 -> TODO : 독립적으로
-    try:
-        score = driver.find_element(By.XPATH, '//*[@id="root"]/div/div/section/section[1]/div/div[3]/div/div[1]/div[1]/div[1]/span').text
-        attd_rate = driver.find_element(By.XPATH, '//*[@id="root"]/div/div/section/section[1]/div/div[3]/div/div[1]/div[2]/div/div[1]/span').text
-        avg_study = driver.find_element(By.XPATH, '//*[@id="root"]/div/div/section/section[1]/div/div[3]/div/div[1]/div[3]/div[1]/div[1]/div[1]/span[2]').text
-        avg_diff = driver.find_element(By.XPATH, '//*[@id="root"]/div/div/section/section[1]/div/div[3]/div/div[1]/div[3]/div[1]/div[2]/div[1]/span[2]').text
-        avg_performance = driver.find_element(By.XPATH, '//*[@id="root"]/div/div/section/section[1]/div/div[3]/div/div[1]/div[3]/div[2]/div[1]/div[1]/span[2]').text
-        avg_satisfaction = driver.find_element(By.XPATH, '//*[@id="root"]/div/div/section/section[1]/div/div[3]/div/div[1]/div[3]/div[2]/div[2]/div[1]/span[2]').text
-        worksheet.append([lecture_id, title, semester, score, attd_rate, avg_study, avg_diff, avg_performance, avg_satisfaction])
-        print(f"[{lecture_id}] {title} {semester} {score} {attd_rate} {avg_study} {avg_diff} {avg_performance} {avg_satisfaction}")
-    
-    except NoSuchElementException:
-        score = "N/A"
-        attd_rate = "N/A"
-        avg_study = "N/A"
-        avg_diff = "N/A"
-        avg_performance = "N/A"
-        avg_satisfaction = "N/A"
-        print(f"[{lecture_id}] 강의 없음 또는 비공개")
 
-    except Exception as e:
-        print(f"[{lecture_id}] 오류 발생: {e}")
+    try:
+        title = driver.find_element(By.XPATH, '//*[@id="root"]/div/div/section/section[1]/div/div[1]/div[1]/div[2]/p[1]').text
+        semester = driver.find_element(By.XPATH, '//*[@id="root"]/div/div/section/section[1]/div/div[1]/div[1]/div[1]/p[1]').text
+    except NoSuchElementException:
+        print(f"[{lecture_id}] 강의 제목 또는 학기 없음")
+        return
+
+    score = safe_get_text(driver, '//*[@id="root"]/div/div/section/section[1]/div/div[3]/div/div[1]/div[1]/div[1]/span')
+    attd_rate = safe_get_text(driver, '//*[@id="root"]/div/div/section/section[1]/div/div[3]/div/div[1]/div[2]/div/div[1]/span')
+    avg_study = safe_get_text(driver, '//*[@id="root"]/div/div/section/section[1]/div/div[3]/div/div[1]/div[3]/div[1]/div[1]/div[1]/span[2]')
+    avg_diff = safe_get_text(driver, '//*[@id="root"]/div/div/section/section[1]/div/div[3]/div/div[1]/div[3]/div[1]/div[2]/div[1]/span[2]')
+    avg_performance = safe_get_text(driver, '//*[@id="root"]/div/div/section/section[1]/div/div[3]/div/div[1]/div[3]/div[2]/div[1]/div[1]/span[2]')
+    avg_satisfaction = safe_get_text(driver, '//*[@id="root"]/div/div/section/section[1]/div/div[3]/div/div[1]/div[3]/div[2]/div[2]/div[1]/span[2]')
+
+    worksheet.append([
+        lecture_id, title, semester,
+        score, attd_rate, avg_study,
+        avg_diff, avg_performance, avg_satisfaction
+    ])
+
+    print(f"[{lecture_id}] {title} {semester} {score} {attd_rate} {avg_study} {avg_diff} {avg_performance} {avg_satisfaction}")
+
 
 def run_scraper(email, password, start_id=1, end_id=1000, output_file="klue_lectures.xlsx"):
     options = webdriver.ChromeOptions()
