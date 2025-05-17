@@ -42,6 +42,7 @@ def scrape_lecture(driver, lecture_id, worksheet):
         avg_satisfaction = driver.find_element(By.XPATH, '//*[@id="root"]/div/div/section/section[1]/div/div[3]/div/div[1]/div[3]/div[2]/div[2]/div[1]/span[2]').text
         worksheet.append([lecture_id, title, semester, score, attd_rate, avg_study, avg_diff, avg_performance, avg_satisfaction])
         print(f"[{lecture_id}] {title} {semester} {score} {attd_rate} {avg_study} {avg_diff} {avg_performance} {avg_satisfaction}")
+    
     except NoSuchElementException:
         score = "N/A"
         attd_rate = "N/A"
@@ -54,12 +55,24 @@ def scrape_lecture(driver, lecture_id, worksheet):
     except Exception as e:
         print(f"[{lecture_id}] 오류 발생: {e}")
 
+def run_scraper(email, password, start_id=1, end_id=1000, output_file="klue_lectures.xlsx"):
+    options = webdriver.ChromeOptions()
+    options.add_argument("start-maximized")
+    options.add_argument("--disable-extensions")
+    driver = webdriver.Chrome(options=options)
 
-login(driver, "id", "pwd")
-time.sleep(2)
-workbook = openpyxl.Workbook()
-worksheet = workbook.active
-worksheet.append(["Lecture ID", "Title", "Semester", "Average Score", "Attd_rate", "avg_study", "avg_diff", "avg_performance", "avg_satisfaction"])
+    login(driver, email, password)
+    time.sleep(2)
 
-for lecture_id in range(1, 10 + 1):
+    workbook = openpyxl.Workbook()
+    worksheet = workbook.active
+    worksheet.append(["Lecture ID", "Title", "Semester", "Average Score", "Attd_rate", "avg_study", "avg_diff", "avg_performance", "avg_satisfaction"])
+
+    for lecture_id in range(start_id, end_id + 1):
         scrape_lecture(driver, lecture_id, worksheet)
+
+    workbook.save(output_file)
+    driver.quit()
+
+# 실행
+run_scraper("id", "pwd", start_id=1, end_id=10)
