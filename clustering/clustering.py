@@ -1,5 +1,7 @@
 import os
 import csv
+import copy
+from queue import Queue
 # import pandas as pd
 
 import cluster
@@ -9,8 +11,10 @@ import cluster
 class Clustering:
     def __init__(self):
         self.instances = []
-        self.clusters = []
+        self.clusters = {}
+        self.cluster_cnt = 0
         self.num_clusters = 0
+        self.neighbor_ids = {}
     
     def load_data(self):
         # data 위치할 파일 임의로 /data로 설정, 추후 수정 가능 
@@ -18,8 +22,10 @@ class Clustering:
         with open(data_path, 'r') as csvfile:
             csvreader = csv.reader(csvfile)
             next(csvreader)
+            id = 0
             for row in csvreader:
-                self.instances.append(cluster.Instance(row))
+                self.instances.append(cluster.Instance(row, id))
+                id += 1
     
     def dissimilarity(self, inst1, inst2):
         '''
@@ -40,3 +46,56 @@ class Clustering:
                     diff_cnt += 1
         dissim = diff_cnt / TF_features_cnt
         return dissim
+
+    def get_neighbor_ids(self, center, radius):
+        if center.id in self.neighbor_ids.keys():
+            return self.neighbor_ids[center.id]
+        neighbor_ids = []
+        for inst in self.instances:
+            if inst == center:
+                continue
+            if self.dissimilarity(center, inst) <= radius:
+                neighbor_ids.append(inst.id)
+        self.neighbor_ids[center.id] = neighbor_ids
+        return neighbor_ids
+
+    def dbscan(self, radius, minPts):
+        checkpoint = 10
+        for idx, inst in enumerate(self.instances):
+            if idx / len(self.instances) * 100 > checkpoint:
+                print(idx / len(self.instances) * 100)
+                checkpoint += 10
+
+
+            if inst.label is not None:
+                continue
+            neighbor_ids = self.get_neighbor_ids(inst, radius)
+            if len(neighbor_ids) < minPts:
+                inst.label = -1 # denotes noise instance
+                continue
+            self.cluster_cnt += 1
+            self.clusters[self.cluster_cnt] = []
+            inst.label = self.cluster_cnt
+            self.clusters[self.cluster_cnt].append(inst)
+
+            seed_set = Queue()
+            for neighbor_id in neighbor_ids:
+                seed_set.put(neighbor_id)
+            
+            while not seed_set.empty():
+                curr_id = seed_set.get()
+                curr_instance = self.instances[curr_id]
+
+                if curr_instance.label == -1:
+                    curr_instance.label = self.cluster_cnt
+                    self.clusters[self.cluster_cnt].append(curr_instance)
+                elif curr_instance.label is None:
+                    curr_instance.label = self.cluster_cnt
+                    self.clusters[self.cluster_cnt].append(curr_instance)
+
+                    n_neighbor_ids = self.get_neighbor_ids(curr_instance, radius)
+
+                    if len(n_neighbor_ids) >= minPts:
+                        for n_neighbor_id in n_neighbor_ids:
+                            if self.instances[n_neighbor_id].label is None or self.instances[n_neighbor_id].label == -1:
+                                seed_set.put(n_neighbor_id)
