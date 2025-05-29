@@ -49,8 +49,40 @@ class Clustering:
         for inst, label in zip(self.instances, labels):
             inst.label = label
 
+    def print_clusters(self):
+        clusters = {}
+        for inst in self.instances:
+            clusters.setdefault(inst.label, []).append(inst.id)
+
+        for cid, member_ids in clusters.items():
+            print(f"Cluster {cid} | Size: {len(member_ids)}")
+            print(f"Sample IDs: {member_ids[:10]} ...\n")  # 처음 10개만 표시
+
+    def visualize_clusters(self):
+        data = self.preprocess_features_avgScore_avgStudy()
+        labels = self.kmeans_model.labels_
+
+        plt.figure(figsize=(8, 6))
+        scatter = plt.scatter(
+            data[:, 0],  # Average Score → x축
+            data[:, 1],  # avg_study → y축
+            c=labels,
+            cmap='viridis',
+            s=50,
+            edgecolors='k'
+        )
+
+        plt.xlabel("Average Score")
+        plt.ylabel("Average Study Hours")
+        plt.title("KMeans Clustering Results")
+        plt.grid(True)
+        plt.colorbar(scatter, label='Cluster Label')
+        plt.show()
 
 if __name__ == "__main__":
     clustering = Clustering(num_clusters=3)
     clustering.load_data()
     clustering.kmeans_clustering()
+    clustering.kmeans_clustering()
+    clustering.print_clusters()
+    clustering.visualize_clusters()
