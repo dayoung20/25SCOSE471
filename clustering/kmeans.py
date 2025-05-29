@@ -15,7 +15,6 @@ class Clustering:
         data_path = os.path.abspath('') + '/final_data.csv'
         with open(data_path, 'r') as csvfile:
             csvreader = csv.reader(csvfile)
-            next(csvreader)  
             id = 0
             for row in csvreader:
                 self.instances.append(Instance(row, id))
@@ -35,7 +34,7 @@ class Clustering:
                 valid_instances.append(inst)
             except ValueError:
                 continue
-        self.valid_instances = valid_instances  # 👈 여기 추가!
+        self.valid_instances = valid_instances 
         return np.array(data)
 
     
@@ -50,12 +49,39 @@ class Clustering:
                 valid_instances.append(inst)
             except ValueError:
                 continue
-        self.valid_instances = valid_instances  # ← 따로 저장
+        self.valid_instances = valid_instances 
+        return np.array(data)
+    
+    def preprocess_features_avgScore_avgPerformance(self):
+        data = []
+        valid_instances = []
+        for inst in self.instances:
+            try:
+                avg_score = float(inst.features[6])  # avgScore
+                avg_diff = float(inst.features[9])   # avgPerformance
+                data.append([avg_score, avg_diff])
+                valid_instances.append(inst)
+            except ValueError:
+                continue
+        self.valid_instances = valid_instances  
+        return np.array(data)
+    
+    def preprocess_features_avgPerformance_avgSatisfaction(self):
+        data = []
+        valid_instances = []
+        for inst in self.instances:
+            try:
+                avg_score = float(inst.features[9])  # avgPerformance
+                avg_diff = float(inst.features[10])   # avgSatisfaction
+                data.append([avg_score, avg_diff])
+                valid_instances.append(inst)
+            except ValueError:
+                continue
+        self.valid_instances = valid_instances  
         return np.array(data)
 
-
     def visualize_clusters(self):
-        data = self.preprocess_features_avgStudy_avgDiff()
+        data = self.preprocess_features_avgPerformance_avgSatisfaction()
         labels = self.kmeans_model.labels_
 
         plt.figure(figsize=(8, 6))
@@ -68,27 +94,15 @@ class Clustering:
             edgecolors='k'
         )
 
-        plt.xlabel("Average Study")
-        plt.ylabel("Average Diff")
+        plt.xlabel("Average Performance")
+        plt.ylabel("Average Satisfaction")
         plt.title("KMeans Clustering Results")
         plt.grid(True)
         plt.colorbar(scatter, label='Cluster Label')
         plt.show()
 
-    # def kmeans_clustering(self):
-    #     feature_matrix = self.preprocess_features_avgStudy_avgDiff()
-
-    #     self.kmeans_model = KMeans(n_clusters=self.num_clusters, random_state=42)
-    #     self.kmeans_model.fit(feature_matrix)
-
-    #     labels = self.kmeans_model.labels_
-
-    #     # 결과 저장
-    #     for inst, label in zip(self.instances, labels):
-    #         inst.label = label
-
     def kmeans_clustering(self):
-        feature_matrix = self.preprocess_features_avgScore_avgStudy()
+        feature_matrix = self.preprocess_features_avgPerformance_avgSatisfaction()
         self.kmeans_model = KMeans(n_clusters=self.num_clusters, random_state=42)
         self.kmeans_model.fit(feature_matrix)
 
@@ -104,7 +118,7 @@ class Clustering:
 
         for cid, member_ids in clusters.items():
             print(f"Cluster {cid} | Size: {len(member_ids)}")
-            print(f"Sample IDs: {member_ids[:10]} ...\n")  # 처음 10개만 표시
+            print(f"Sample IDs: {member_ids[:10]} ...\n") 
 
 
 if __name__ == "__main__":
