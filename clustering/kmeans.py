@@ -21,14 +21,24 @@ class Clustering:
                 self.instances.append(Instance(row, id))
                 id += 1
 
-    def preprocess_features(self):
+    def preprocess_features_avgScore_avgStudy(self):
         """
-        추출하여 벡터 생성
+        Average Score와 avg_study만 추출하여 벡터 생성
         """
+        data = []
+        for inst in self.instances:
+            try:
+                avg_score = float(inst.features[6])  # Average Score의 인덱스
+                avg_study = float(inst.features[7])  # avg_study의 인덱스
+                data.append([avg_score, avg_study])
+            except ValueError:
+                # 변환 안 되는 경우는 건너뜀
+                continue
+        return np.array(data)
         
 
     def kmeans_clustering(self):
-        feature_matrix = self.preprocess_features()
+        feature_matrix = self.preprocess_features_avgScore_avgStudy()
 
         self.kmeans_model = KMeans(n_clusters=self.num_clusters, random_state=42)
         self.kmeans_model.fit(feature_matrix)
