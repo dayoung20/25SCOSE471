@@ -4,6 +4,7 @@ import numpy as np
 from sklearn.cluster import KMeans
 from cluster import Instance 
 import matplotlib.pyplot as plt
+from sklearn.metrics import silhouette_score
 
 class Clustering:
     def __init__(self, num_clusters):
@@ -113,13 +114,9 @@ class Clustering:
                 continue
         self.valid_instances = valid_instances
         return np.array(data)
-    
-    
-
-    
 
     def kmeans_clustering(self):
-        feature_matrix = self.preprocess_features_avgStudy_diff_satis()
+        feature_matrix = self.preprocess_features_avgPerformance_avgSatisfaction()
         self.kmeans_model = KMeans(n_clusters=self.num_clusters, random_state=42)
         self.kmeans_model.fit(feature_matrix)
 
@@ -178,10 +175,15 @@ class Clustering:
             print(f"Cluster {cid} | Size: {len(member_ids)}")
             print(f"Sample IDs: {member_ids[:10]} ...\n")  # 처음 10개만 표시
 
+    def evaluate_clustering(self):
+            data = self.preprocess_features_avgPerformance_avgSatisfaction()
+            score = silhouette_score(data, self.kmeans_model.labels_)
+            print(f"\nSilhouette Score: {score:.4f}\n")  
 
 if __name__ == "__main__":
     clustering = Clustering(num_clusters=3)
     clustering.load_data()
     clustering.kmeans_clustering()
-    clustering.print_clusters()
-    clustering.visualize_clusters_3d()
+    # clustering.print_clusters()
+    # clustering.visualize_clusters_3d()
+    clustering.evaluate_clustering()
