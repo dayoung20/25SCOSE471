@@ -6,8 +6,19 @@ import pandas as pd
 import numpy as np
 
 import cluster
+import torch
+import torch.nn as nn
 
 # from kmodes.kmodes import KModes
+
+feature_category = {
+    'nominal' : ['Unnamed: 0', 'ID', 'Title', '담당교수', '교과목명'], 
+    'categorical' : ['Class', 'Semester', '개설학과'],
+    'ordinal' : ['Year', ], 
+    'numerical' : ['Average Score', 'avg_study', 'avg_diff', 'avg_performance', 'avg_satisfaction', 'recc_rate', '학점', '강의시간', '시험', '출석', '과제', '참여도', '발표', '프로젝트', '협동', '보고서', '실험', '태도', '기타'], 
+    'etc' : ['학과제한'],
+    'binary' : []
+}
 
 class Clustering:
     def __init__(self, file_name):
@@ -19,6 +30,27 @@ class Clustering:
         
         self.load_data(file_name)
     
+    def binary_feature_index(self, features):
+        self.binary_feature_indices = []
+        for i, f in enumerate(features):
+            if type(f) == np.bool:
+                self.binary_feature_indices.append(i)
+
+    def key_to_index(self, features):
+        feature_keys = list(features.index)
+        for f in feature_keys:
+            is_binary = True
+            for category in feature_category.keys():
+                if f in feature_category[category]:
+                    is_binary = False
+                    break
+            if is_binary:
+                feature_category['binary'].append(f)
+
+        self.feature_category2idx = {}
+        for category, key in feature_category.items():
+                self.feature_category2idx[category] = [feature_keys.index(k) for k in key]
+
     def load_data(self, file_name):
         # data 위치할 파일 임의로 /data로 설정, 추후 수정 가능 
         data_path = os.path.abspath('../') + '/data/' + file_name
