@@ -10,7 +10,16 @@ feature_category = {
 }
 
 class Instance:
-    def __init__(self, features, id):
-        self.features = features
+    def __init__(self, features, id, feature_category2idx):
+        self.features = {}
         self.id = id
         self.label = None
+        self.feature_category2idx = feature_category2idx
+        self.split_features(features)
+    
+    def split_features(self, features):
+        self.feature_types = feature_category.keys()
+        for ftype in self.feature_types:
+            self.features[ftype] = np.array([])
+        for ftype in self.feature_types:
+            self.features[ftype] = np.append(self.features[ftype], features.iloc[self.feature_category2idx[ftype]])
