@@ -21,7 +21,7 @@ feature_category = {
 }
 
 class Clustering:
-    def __init__(self, file_name):
+    def __init__(self, file_name, metric='binary'):
         self.instances = []
         self.clusters = {}
         self.cluster_cnt = 0
@@ -29,6 +29,12 @@ class Clustering:
         self.neighbor_ids = {}
 
         self.load_data(file_name)
+
+        self.metric = metric
+        if metric == 'binary':
+            self.dissimilarity = self.binary_dissimilarity
+        elif metric == 'gower':
+            self.dissimilarity = self.gower_dissimilarity
     
     def binary_feature_index(self, features):
         self.binary_feature_indices = []
