@@ -2,30 +2,33 @@ import os
 import csv
 import copy
 from queue import Queue
-# import pandas as pd
+import pandas as pd
+import numpy as np
 
 import cluster
 
 # from kmodes.kmodes import KModes
 
 class Clustering:
-    def __init__(self):
+    def __init__(self, file_name):
         self.instances = []
         self.clusters = {}
         self.cluster_cnt = 0
         self.num_clusters = 0
         self.neighbor_ids = {}
+        
+        self.load_data(file_name)
     
-    def load_data(self):
+    def load_data(self, file_name):
         # data 위치할 파일 임의로 /data로 설정, 추후 수정 가능 
-        data_path = os.path.abspath('') + '/data' + '/final.csv'
-        with open(data_path, 'r') as csvfile:
-            csvreader = csv.reader(csvfile)
-            next(csvreader)
-            id = 0
-            for row in csvreader:
-                self.instances.append(cluster.Instance(row, id))
-                id += 1
+        data_path = os.path.abspath('../') + '/data/' + file_name
+        data = pd.read_csv(data_path)
+
+        self.key_to_index(data.iloc[0])
+
+        for i in range(len(data)):
+            self.instances.append(cluster.Instance(data.iloc[i], data.iloc[i, 0], self.feature_category2idx))
+        self.feature_types = self.instances[0].feature_types
     
     def dissimilarity(self, inst1, inst2):
         '''
