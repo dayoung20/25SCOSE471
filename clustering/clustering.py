@@ -77,6 +77,66 @@ class Clustering:
         dissim = diff_cnt / binary_features_cnt
         return dissim
 
+    def gower_dissimilarity(self, inst1, inst2, ranges=None, ordinals=None):
+        """
+        calculates gower dissimilarity based on various features between two distinct data instances
+
+        :param inst1: first data instance
+        :param inst2: second data instance 
+        :param ranges: list of (min, max) for each numerical/ordinal feature
+        :param ordinals: list of lists specifying the order for each ordinal feature (optional)
+        """
+        assert inst1 != inst2
+
+        x = inst1.features
+        y = inst2.features
+
+        assert len(x) == len(y) == len(self.feature_types)
+        dissim = 0.0
+        valid = 0
+
+        for ftype in self.feature_types:
+            if ftype == 'numerical':
+                if ranges is not None and ranges[ftype] is not None:
+                    min_, max_ = ranges[ftype]
+                    denom = max_ - min_
+                    if denom == 0:
+                        continue
+                    dissim += sum(abs(x[ftype] - y[ftype])) / denom
+                else:
+                    dissim += sum(abs(x[ftype] - y[ftype])) / (np.nanmax([x[ftype], y[ftype]]) - np.nanmin([x[ftype], y[ftype]]) + 1e-9)
+                valid += 1
+            elif ftype == 'binary':
+                dissim += sum(x[ftype] != y[ftype])
+                valid += 1
+            elif ftype == 'categorical':
+                dissim += sum(x[ftype] != y[ftype])
+                valid += 1
+            elif ftype == 'ordinal':
+                if ordinals is not None and ordinals[ftype] is not None:
+                    order = ordinals[ftype]
+                    xi = order.index(x[ftype])
+                    yi = order.index(y[ftype])
+                    denom = len(order) - 1
+                    if denom == 0:
+                        continue
+                    dissim += sum(abs(xi - yi)) / denom
+                    valid += 1
+                elif ranges is not None and ranges[ftype] is not None:
+                    min_, max_ = ranges[ftype]
+                    denom = max_ - min_
+                    if denom == 0:
+                        continue
+                    dissim += sum(abs(x[ftype] - y[ftype])) / denom
+                    valid += 1
+                else:
+                    dissim += sum(x[ftype] != y[ftype])
+                    valid += 1
+            else:
+                pass
+
+        return dissim / valid if valid > 0 else 0.0
+
     def get_neighbor_ids(self, center, radius):
         if center.id in self.neighbor_ids.keys():
             return self.neighbor_ids[center.id]
