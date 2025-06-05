@@ -27,7 +27,7 @@ class Clustering:
         self.cluster_cnt = 0
         self.num_clusters = 0
         self.neighbor_ids = {}
-        
+
         self.load_data(file_name)
     
     def binary_feature_index(self, features):
@@ -62,24 +62,19 @@ class Clustering:
             self.instances.append(cluster.Instance(data.iloc[i], data.iloc[i, 0], self.feature_category2idx))
         self.feature_types = self.instances[0].feature_types
     
-    def dissimilarity(self, inst1, inst2):
+    def binary_dissimilarity(self, inst1, inst2):
         '''
-        calculates dissimilarity between two distinct data instances
+        calculates dissimilarity based on binary features between two distinct data instances
 
         :param inst1: first data instance
         :param inst2: second data instance
         '''
         assert inst1 != inst2
 
-        total_features_cnt = len(inst1.features)
-        TF_features_cnt = 0
-        diff_cnt = 0
-        for i in range(total_features_cnt):
-            if inst1.features[i].lower() in ['true', 'false'] or inst2.features[i].lower() in ['true', 'false']:
-                TF_features_cnt += 1
-                if inst1.features[i] != inst2.features[i]:
-                    diff_cnt += 1
-        dissim = diff_cnt / TF_features_cnt
+        diff_cnt = sum(inst1.features.iloc[self.binary_feature_indices] != inst2.features.iloc[self.binary_feature_indices])
+        binary_features_cnt = len(self.binary_feature_indices)
+
+        dissim = diff_cnt / binary_features_cnt
         return dissim
 
     def get_neighbor_ids(self, center, radius):
