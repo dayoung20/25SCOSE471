@@ -150,11 +150,15 @@ class Clustering:
         return neighbor_ids
 
     def dbscan(self, radius, minPts):
-        checkpoint = 10
+        self.radius = radius
+        self.minPts = minPts
+
+        label_set_cnt = 0
+        percentage = 10
         for idx, inst in enumerate(self.instances):
-            if idx / len(self.instances) * 100 > checkpoint:
-                print(idx / len(self.instances) * 100)
-                checkpoint += 10
+            # if idx / len(self.instances) * 100 > checkpoint:
+            #     print(idx / len(self.instances) * 100)
+            #     checkpoint += 10
 
 
             if inst.label is not None:
@@ -172,15 +176,27 @@ class Clustering:
             for neighbor_id in neighbor_ids:
                 seed_set.put(neighbor_id)
             
+            label_set_cnt += 1
+            if label_set_cnt / len(self.instances) * 100 > percentage:
+                print(f'{label_set_cnt / len(self.instances) * 100} % done.')
+                percentage += 10
             while not seed_set.empty():
                 curr_id = seed_set.get()
                 curr_instance = self.instances[curr_id]
 
                 if curr_instance.label == -1:
                     curr_instance.label = self.cluster_cnt
+                    label_set_cnt += 1
+                    if label_set_cnt / len(self.instances) * 100 > percentage:
+                        print(f'{label_set_cnt / len(self.instances) * 100} % done.')
+                        percentage += 10
                     self.clusters[self.cluster_cnt].append(curr_instance)
                 elif curr_instance.label is None:
                     curr_instance.label = self.cluster_cnt
+                    label_set_cnt += 1
+                    if label_set_cnt / len(self.instances) * 100 > percentage:
+                        print(f'{label_set_cnt / len(self.instances) * 100} % done.')
+                        percentage += 10
                     self.clusters[self.cluster_cnt].append(curr_instance)
 
                     n_neighbor_ids = self.get_neighbor_ids(curr_instance, radius)
