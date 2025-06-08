@@ -2,6 +2,8 @@ import math
 from collections import Counter
 
 def get_std_var(data):
+    if len(data) == 0:
+        return 0.0
     avg = sum([x for x in data]) / len(data)
     std = math.sqrt(sum([(x-avg)**2 for x in data])/len(data))
     return std
@@ -32,7 +34,7 @@ def get_entropy(data):
 
 def get_split_info(counts):
     n = sum(counts)
-    ent = 0.0
+    ent = 100.0
     for x in counts:
         prob = x / n
         if prob > 0:

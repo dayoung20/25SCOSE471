@@ -20,16 +20,18 @@ class DecisionTree:
             if len(data) == 0:
                 node.value = 0
                 return
-            node.value = sum([x['class_label'] for x in data]) / len(data)
+            node.value = sum([x[class_label] for x in data]) / len(data)
+            #print('end md', len(data))
             return
         
         impurity = self._get_impurity(data, class_label)
         # impurity condition
-        if impurity < 0.1:
+        if impurity < 0.02:
             if len(data) == 0:
                 node.value = 0
                 return
-            node.value = sum([x['class_label'] for x in data]) / len(data)
+            #print('end', len(data))
+            node.value = sum([x[class_label] for x in data]) / len(data)
             return
 
         # max gain ratio
@@ -48,7 +50,7 @@ class DecisionTree:
                     [x for x in data if x[feature.name]],
                     [x for x in data if not x[feature.name]]
                 ]
-                gr = self._get_gain_ratio(impurity, splits)
+                gr = self._get_gain_ratio(impurity, splits, class_label)
                 if gr > max_gr:
                     max_gr = gr
                     feature_name = feature.name
@@ -63,7 +65,7 @@ class DecisionTree:
                         [x for x in data if x[feature.name] == v],
                         [x for x in data if x[feature.name] != v]
                     ]
-                    gr = self._get_gain_ratio(impurity, splits)
+                    gr = self._get_gain_ratio(impurity, splits, class_label)
                     if gr > max_gr:
                         max_gr = gr
                         feature_name = feature.name
@@ -72,58 +74,70 @@ class DecisionTree:
 
                 # type 2 : x | y | z
                 splits = [[y for y in data if y[feature.name] == x] for x in all_values]
-                gr = self._get_gain_ratio(impurity, splits)
+                gr = self._get_gain_ratio(impurity, splits, class_label)
                 if gr > max_gr:
                     max_gr = gr
                     feature_name = feature.name
                     split_type = 'all'
             elif feature.type == FeatureType.NUMERICAL:
-                all_values = list(set([x[feature.name] for x in data])).sort()
+                all_values = sorted(list(set([x[feature.name] for x in data])))
                 for i, v in enumerate(all_values[:-1]):
                     mid = (all_values[i] + all_values[i+1]) / 2
                     splits = [
                         [x for x in data if x[feature.name] < mid],
                         [x for x in data if x[feature.name] >= mid]
                     ]
-                    gr = self._get_gain_ratio(impurity, splits) 
+                    gr = self._get_gain_ratio(impurity, splits, class_label) 
                     if gr > max_gr:
                         max_gr = gr
                         feature_name = feature.name
                         value = mid
                         split_type = 'less_than'
-                
 
+        if max_gr == 0.0:
+            if len(data) == 0:
+                node.value = 0
+                return
+            #print('end', len(data))
+            node.value = sum([x[class_label] for x in data]) / len(data)
+            return        
+        
+        # print('split', depth, feature_name, value, split_type, impurity, max_gr)
         # split and build recursively
         if split_type == 'eq':
-            eq_node = TreeNode(EQ(feature_name, value))
-            not_eq_node = TreeNode(NOT(EQ(feature_name, value)))
+            eq_node = TreeNode(EQ(feature_name, value), f'=={value}')
+            not_eq_node = TreeNode(NOT(EQ(feature_name, value)), f'!={value}')
             node.children = [eq_node, not_eq_node]
-            self._build_recur(eq_node, {x for x in data if x[feature_name] == value}, class_label, depth+1)
-            self._build_recur(not_eq_node, {x for x in data if x[feature_name] != value}, class_label, depth+1)
+            self._build_recur(eq_node, [x for x in data if x[feature_name] == value], class_label, depth+1)
+            self._build_recur(not_eq_node, [x for x in data if x[feature_name] != value], class_label, depth+1)
         elif split_type == 'less_than':
-            less_node = TreeNode(LESS_THAN(feature_name, value))
-            larger_node = TreeNode(NOT(LESS_THAN(feature_name, value)))
+            less_node = TreeNode(LESS_THAN(feature_name, value), f'< {value}')
+            larger_node = TreeNode(NOT(LESS_THAN(feature_name, value)), f'>= {value}')
             node.children = [less_node, larger_node]
-            self._build_recur(less_node, {x for x in data if x[feature_name] < value}, class_label, depth+1)
-            self._build_recur(larger_node, {x for x in data if x[feature_name] >= value}, class_label, depth+1)
+            self._build_recur(less_node, [x for x in data if x[feature_name] < value], class_label, depth+1)
+            self._build_recur(larger_node, [x for x in data if x[feature_name] >= value], class_label, depth+1)
         elif split_type == 'all':
             all = set([x[feature_name] for x in data])
             node.children = []
             for v in all:
-                node.children.append(TreeNode(EQ(feature_name, v)))
-                self._build_recur(node.children[-1], {x for x in data if x[feature_name] == v}, class_label, depth+1)
+                node.children.append(TreeNode(EQ(feature_name, v), f'=={v}'))
+                self._build_recur(node.children[-1], [x for x in data if x[feature_name] == v], class_label, depth+1)
 
     def _get_impurity(self, data, class_label):
         if self.purity_measure == 'std-var':
-            return get_std_var([x['class_label'] for x in data])
+            return get_std_var([x[class_label] for x in data])
         elif self.purity_measure == 'gini':
-            return get_gini_index([x['class_label'] for x in data])
+            return get_gini_index([x[class_label] for x in data])
         elif self.purity_measure == 'entropy':
-            return get_entropy([x['class_label'] for x in data])
+            return get_entropy([x[class_label] for x in data])
         
-    def _get_gain_ratio(self, impurity, splits):
+    def _get_gain_ratio(self, impurity, splits, class_label):
+        if [] in splits:
+            return 0.0
+        if len(splits) == 1:
+            return 0.0
         cnt = sum([len(x) for x in splits])
-        tmp = [self._get_impurity(data) * len(data) / cnt for data in splits]
+        tmp = [self._get_impurity(data, class_label) * len(data) / cnt for data in splits]
         return (impurity - sum(tmp)) / get_split_info([len(x) for x in splits])
 
     def predict(self, x):
@@ -133,5 +147,15 @@ class DecisionTree:
             if current == None:
                 raise Exception('자식 노드 탐색 실패')
         return current.value
+    
+    def travel(self):
+        self._travel(self.root, '')
+
+    def _travel(self, node, path):
+        if node.value != None:
+            print(path, ',', node.value)
+            return
+        for c in node.children:
+            self._travel(c, path + ' -> ' + c.match_rule_str)
 
     
