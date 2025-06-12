@@ -4,10 +4,6 @@ from bs4 import BeautifulSoup
 import time
 import os
 
-headers = {
-    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/134.0.0.0 Whale/4.31.304.16 Safari/537.36'
-}
-
 def get_course_info(course):
     # 이미 강의계획서 정보가 존재한다면 스킵
     if 'detailed_info' in course:
@@ -23,6 +19,9 @@ def get_course_info(course):
     url = f'https://infodepot.korea.ac.kr/lecture1/lecsubjectPlanViewNew.jsp?year={year}&term={term}&grad_cd={grad_cd}&col_cd={col_cd}&dept_cd={dept_cd}&cour_cd={cour_cd}&cour_cls={cour_cls}&cour_nm=&std_id=&device=WW'
 
     try:
+        headers = {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/134.0.0.0 Whale/4.31.304.16 Safari/537.36'
+        }
         res = requests.get(url, headers=headers)
 
         # 서버에 부담이 가지 않도록 요청당 0.3초의 딜레이 추가
@@ -81,35 +80,36 @@ def get_course_info(course):
 
     return course
 
-filepath = 'courses_with_syllabus.pickle'
+if __name__=="__main__":
+    filepath = 'courses_with_syllabus.pickle'
 
-if not os.path.exists(filepath):
-    filepath = 'courses.pickle'
+    if not os.path.exists(filepath):
+        filepath = 'courses.pickle'
 
-with open(filepath, 'rb') as fr:
-    courses = pickle.load(fr)
+    with open(filepath, 'rb') as fr:
+        courses = pickle.load(fr)
 
-checkpoint = 0
+    checkpoint = 0
 
-# 백업이 있다면 불러옴
-if os.path.exists('courses_backup.pickle'):
-    with open('courses_backup.pickle', 'rb') as fr:
-        backup = pickle.load(fr)
-        print('backup', len(backup))
-        checkpoint = len(backup)
-        backup.extend(courses[len(backup):])
-        courses = backup
+    # 백업이 있다면 불러옴
+    if os.path.exists('courses_backup.pickle'):
+        with open('courses_backup.pickle', 'rb') as fr:
+            backup = pickle.load(fr)
+            print('backup', len(backup))
+            checkpoint = len(backup)
+            backup.extend(courses[len(backup):])
+            courses = backup
 
-new_courses = []
-for i in courses:
-    new_courses.append(get_course_info(i))
+    new_courses = []
+    for i in courses:
+        new_courses.append(get_course_info(i))
 
-    # 시간이 오래 걸리기에 중간에 백업 생성
-    # 만약 의도치 않게 종료되어도 백업 지점부터 작업 재개
-    if len(new_courses) % 3000 == 0 and len(new_courses) > checkpoint:
-        print('make backup')
-        with open('courses_backup.pickle', 'wb') as fw:
-            pickle.dump(new_courses, fw)
+        # 시간이 오래 걸리기에 중간에 백업 생성
+        # 만약 의도치 않게 종료되어도 백업 지점부터 작업 재개
+        if len(new_courses) % 3000 == 0 and len(new_courses) > checkpoint:
+            print('make backup')
+            with open('courses_backup.pickle', 'wb') as fw:
+                pickle.dump(new_courses, fw)
 
-with open('courses_with_syllabus.pickle', 'wb') as fw:
-    pickle.dump(new_courses, fw)
+    with open('courses_with_syllabus.pickle', 'wb') as fw:
+        pickle.dump(new_courses, fw)
