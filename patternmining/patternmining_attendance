@@ -82,7 +82,7 @@ df_encoded = pd.DataFrame(te_ary, columns=te.columns_)
 # Run Apriori
 frequent_itemsets = apriori(df_encoded, min_support=0.005, use_colnames=True)
 if frequent_itemsets.empty:
-    print("⚠️ No frequent itemsets found. Try lowering min_support further.")
+    print("No frequent itemsets found. Try lowering min_support further.")
     exit()
 
 rules = association_rules(frequent_itemsets, metric="confidence", min_threshold=0.4)

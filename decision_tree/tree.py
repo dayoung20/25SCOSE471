@@ -21,16 +21,15 @@ class DecisionTree:
                 node.value = 0
                 return
             node.value = sum([x[class_label] for x in data]) / len(data)
-            #print('end md', len(data))
             return
         
         impurity = self._get_impurity(data, class_label)
+        
         # impurity condition
         if impurity < 0.02:
             if len(data) == 0:
                 node.value = 0
                 return
-            #print('end', len(data))
             node.value = sum([x[class_label] for x in data]) / len(data)
             return
 
@@ -42,7 +41,7 @@ class DecisionTree:
 
         for feature in self.features:
             # ignore class label feature
-            if feature == class_label:
+            if feature.name == class_label:
                 continue
 
             if feature.type == FeatureType.BOOLEAN:
