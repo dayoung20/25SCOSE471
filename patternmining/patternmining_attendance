@@ -2,15 +2,15 @@ import pandas as pd
 from mlxtend.preprocessing import TransactionEncoder
 from mlxtend.frequent_patterns import apriori, association_rules
 
-# === 1. Load data ===
+# Load data
 df = pd.read_csv("merged_preprocessing.csv", low_memory=False)
 
-# === 2. Binning: Achievement level ===
+# Binning: Achievement level
 df['achievement_level'] = df['achievement level'].apply(
     lambda x: 'Achievement=High' if x >= 4.0 else ('Achievement=Medium' if x >= 3.0 else 'Achievement=Low')
 )
 
-# === 3. Binning: Attendance rate ===
+# Binning: Attendance rate
 def bin_attendance(rate):
     if rate >= 0.9:
         return 'Attend=High'
@@ -23,7 +23,7 @@ df['attendance rate'] = pd.to_numeric(df['attendance rate'], errors='coerce')
 df = df.dropna(subset=['attendance rate'])
 df['attendance_bin'] = df['attendance rate'].apply(bin_attendance)
 
-# === 4. Binning: Course difficulty ===
+# Binning: Course difficulty
 def bin_difficulty(x):
     if x >= 4.0:
         return 'Difficulty=High'
@@ -36,7 +36,7 @@ df['course difficulty'] = pd.to_numeric(df['course difficulty'], errors='coerce'
 df = df.dropna(subset=['course difficulty'])
 df['difficulty_bin'] = df['course difficulty'].apply(bin_difficulty)
 
-# === 5. Binning: Teaching ability ===
+# Binning: Teaching ability 
 def bin_teaching(x):
     if x >= 4.0:
         return 'Teaching=High'
@@ -49,7 +49,7 @@ df['teaching ability'] = pd.to_numeric(df['teaching ability'], errors='coerce')
 df = df.dropna(subset=['teaching ability'])
 df['teaching_bin'] = df['teaching ability'].apply(bin_teaching)
 
-# === 6. Binning: Learning load ===
+# Binning: Learning load
 def bin_learning(x):
     if x >= 4.0:
         return 'Load=High'
@@ -62,7 +62,7 @@ df['learning load'] = pd.to_numeric(df['learning load'], errors='coerce')
 df = df.dropna(subset=['learning load'])
 df['load_bin'] = df['learning load'].apply(bin_learning)
 
-# === 7. Create transactions ===
+# Create transactions
 transactions = []
 for _, row in df.iterrows():
     items = [
@@ -74,12 +74,12 @@ for _, row in df.iterrows():
     ]
     transactions.append(items)
 
-# === 8. Transaction encoding ===
+# Transaction encoding
 te = TransactionEncoder()
 te_ary = te.fit(transactions).transform(transactions)
 df_encoded = pd.DataFrame(te_ary, columns=te.columns_)
 
-# === 9. Run Apriori ===
+# Run Apriori
 frequent_itemsets = apriori(df_encoded, min_support=0.005, use_colnames=True)
 if frequent_itemsets.empty:
     print("⚠️ No frequent itemsets found. Try lowering min_support further.")
@@ -87,17 +87,17 @@ if frequent_itemsets.empty:
 
 rules = association_rules(frequent_itemsets, metric="confidence", min_threshold=0.4)
 
-# === 10. Filter for rules involving achievement level ===
+# Filter for rules involving achievement level
 rules_score_related = rules[
     rules['consequents'].apply(lambda x: any('Achievement=' in item for item in x)) |
     rules['antecedents'].apply(lambda x: any('Achievement=' in item for item in x))
 ]
 
-# === 11. Sort and display all rules
+# Sort and display all rules
 pd.set_option('display.max_rows', None)
 pd.set_option('display.max_colwidth', None)
 top_rules = rules_score_related.sort_values(by='lift', ascending=False)
 print(top_rules[['antecedents', 'consequents', 'support', 'confidence', 'lift']])
 
-# === 12. Optional: Export to CSV
+# Export to CSV
 top_rules[['antecedents', 'consequents', 'support', 'confidence', 'lift']].to_csv("rules_with_learning_load.csv", index=False)
