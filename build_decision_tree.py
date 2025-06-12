@@ -4,6 +4,7 @@ from random import shuffle
 import csv
 
 features = [
+    Feature('Year', FeatureType.NOMINAL),
     Feature('인원제한', FeatureType.BOOLEAN),
     Feature('NeMo', FeatureType.BOOLEAN),
     Feature('영강', FeatureType.BOOLEAN),
@@ -22,30 +23,35 @@ features = [
     Feature('수업유형', FeatureType.NOMINAL),
 ]
 
+ct = ['대면','병행', '원격', '원격(녹화)', '원격(실시간)', '혼합']
+for x in ct:
+    features.append(Feature('수업유형_' + x, FeatureType.BOOLEAN))
+
 class_type = ['교직', '교직(비사대)', '군사학', '전공선택', '전공필수', '평생교육사',
               '학문의기초', '학부공통']
-#for t in class_type:
-#    features.append(Feature('이수구분.' + t, FeatureType.BOOLEAN))
+for t in class_type:
+    features.append(Feature('이수구분.' + t, FeatureType.BOOLEAN))
 
 class_components = ['Q&A', '개별지도', '발표', '상시상담', '실습', '실험',
                     '이론강의', '집단지도', '체험', '퀴즈', '토론', '특강',
                     '포럼', '프로젝트', '협동학습']
-#for c in class_components:
-#    features.append(Feature('수업구성요소_' + c, FeatureType.BOOLEAN))
+for c in class_components:
+    features.append(Feature('수업구성요소_' + c, FeatureType.BOOLEAN))
 
 grade_type = ['P/F', '상대평가', '절대평가']
 #for g in grade_type:
 #    features.append(Feature('성적평가_' + g, FeatureType.BOOLEAN))
 
 criteria = ['시험', '출석', '과제', '참여도', '발표', '프로젝트', '협동', '보고서', '실험', '태도', '기타']
-for c in criteria:
-    features.append(Feature(c, FeatureType.NUMERICAL))
+#for c in criteria:
+#    features.append(Feature(c, FeatureType.NUMERICAL))
 
 data = []
-classes = ['Average Score', 'avg_study', 'avg_diff', 'avg_performance', 'avg_satisfaction']
-class_label = 'avg_satisfaction'#'Average Score'
+classes = ['course evaluation', 'learning load', 'course difficulty', 'teaching ability', 'achievement level']
+#classes = ['attendance rate']
+class_label = 'course evaluation'
 
-with open('final_data.csv', 'r') as f:
+with open('merged_preprocessing.csv', 'r', encoding='utf-8') as f:
     r = csv.DictReader(f)
     for row in r:
         flag = False
@@ -60,7 +66,8 @@ for x in data:
     for f in features:
         if f.type == FeatureType.NUMERICAL:
             x[f.name] = float(x[f.name])
-
+'''
+# filtering
 new_data = []
 for x in data:
     #if x['개설학과'] != '컴퓨터학과':
@@ -74,6 +81,7 @@ for x in data:
     new_data.append(x)
 
 data = new_data
+'''
 
 print(len(data))
 
@@ -82,39 +90,6 @@ tmp = math.ceil(len(data)*0.7)
 train_data = data[:tmp]
 test_data = data[tmp:]
 
-'''
-avg = 0.0
-for i in train_data:
-    avg += i[class_label]
-avg /= len(train_data)
-
-tree = DecisionTree(features, max_depth=100)
-tree.build(data, class_label)
-
-mse = 0.0
-mae = 0.0
-
-mse_ = 0.0
-mae_ = 0.0
-for item in test_data:
-    pred = tree.predict(item)
-    if pred == None:
-        pred = 0.0
-    #print(item['Average Score'], pred)
-    mse += (item[class_label] - pred)**2
-    mae += abs(item[class_label] - pred)
-    mse_ += (item[class_label] - avg)**2
-    mae_ += abs(item[class_label] - avg)
-
-#tree.travel()
-
-mse /= len(test_data)
-mae /= len(test_data)
-mse_ /= len(test_data)
-mae_ /= len(test_data)
-print(mse, mae)
-print(mse_, mae_)
-'''
 
 def get_mae(tree, test_data, class_label):
     error_sum = 0.0
@@ -143,4 +118,4 @@ for class_label in classes:
     f_list.sort(reverse=True)
     print('\nClass label =', class_label)
     for a, b in f_list:
-        print(f"{a:.4f} {b}")
+        print(f"{a:.6f} {b}")
