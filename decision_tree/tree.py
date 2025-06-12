@@ -42,7 +42,6 @@ class DecisionTree:
         for feature in self.features:
             # ignore class label feature
             if feature.name == class_label:
-                print('skip')
                 continue
 
             if feature.type == FeatureType.BOOLEAN:
