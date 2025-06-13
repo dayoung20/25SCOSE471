@@ -100,4 +100,4 @@ top_rules = rules_score_related.sort_values(by='lift', ascending=False)
 print(top_rules[['antecedents', 'consequents', 'support', 'confidence', 'lift']])
 
 # Export to CSV
-top_rules[['antecedents', 'consequents', 'support', 'confidence', 'lift']].to_csv("rules_with_learning_load.csv", index=False)
+top_rules[['antecedents', 'consequents', 'support', 'confidence', 'lift']].to_csv("rules.csv", index=False)
