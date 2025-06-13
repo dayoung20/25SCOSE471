@@ -85,7 +85,7 @@ if frequent_itemsets.empty:
     print("No frequent itemsets found. Try lowering min_support further.")
     exit()
 
-rules = association_rules(frequent_itemsets, metric="confidence", min_threshold=0.4)
+rules = association_rules(frequent_itemsets, metric="confidence", min_threshold=0.5)
 
 # Filter for rules involving achievement level
 rules_score_related = rules[
