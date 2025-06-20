@@ -1,0 +1,4 @@
+antecedents,consequents,support,confidence,lift
+frozenset({'Attend=High'}),frozenset({'Achievement=Medium'}),0.22963398308681882,0.5550469576197616,1.0097067694832762
+frozenset({'Attend=Medium'}),frozenset({'Achievement=Medium'}),0.15261044176706828,0.550854449027696,1.0020800196229058
+frozenset({'Attend=Low'}),frozenset({'Achievement=Medium'}),0.1674666144251804,0.5415478830112976,0.9851500958058335
